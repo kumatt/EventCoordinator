@@ -2,7 +2,7 @@
 // https://docs.swift.org/swift-book
 
 @MainActor
-public final class Coordinator {
+public final class EventCoordinator {
     
     public let actionBus = ActionBus()
     

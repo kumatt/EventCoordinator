@@ -9,38 +9,23 @@
 @MainActor
 public protocol AnyRouter {
     /// 注册路由
-    static func register<R>(context: R, _ gotoHandle: @escaping (Self) -> Any?)
+    static func register(context: RouterHub, _ gotoHandle: @escaping (Self) -> Any?)
     /// 注销路由
-    static func unregister<R>(context: R)
+    static func unregister(context: RouterHub)
     /// 获取路由值对应的对象
-    static func resolve<T, R>(context: R, _ route: Self) throws -> T
+    static func resolve<T>(context: RouterHub, _ route: Self) throws -> T
 }
 
 public extension AnyRouter {
-    static func register<R>(context: R, _ gotoHandle: @escaping (Self) -> Any?) where R: RouterHub {
+    static func register(context: RouterHub, _ gotoHandle: @escaping (Self) -> Any?) {
         context.register(gotoHandle)
     }
     
-    static func unregister<R>(context: R) where R: RouterHub {
+    static func unregister(context: RouterHub) {
         context.unregister(Self.self)
     }
     
-    static func resolve<T, R>(context: R, _ route: Self) throws -> T where R: RouterHub {
+    static func resolve<T>(context: RouterHub, _ route: Self) throws -> T {
         try context.resolve(route)
-    }
-}
-
-public extension AnyRouter {
-    /// 注册路由
-    static func register<R>(context: R, _ gotoHandle: @escaping (Self) -> Any?) where R: Coordinator {
-        context.routeHub.register(gotoHandle)
-    }
-    /// 注销路由
-    static func unregister<R>(context: R) where R: Coordinator {
-        context.routeHub.unregister(Self.self)
-    }
-    /// 获取路由值对应的对象
-    static func resolve<T, R>(context: R, _ route: Self) throws -> T where R: Coordinator {
-        try context.routeHub.resolve(route)
     }
 }
