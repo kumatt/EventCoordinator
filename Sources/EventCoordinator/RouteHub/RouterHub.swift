@@ -14,6 +14,7 @@ public final class RouterHub {
     
     public static let `default` = RouterHub()
     /// 路由映射，返回goto的对象
+    /// Note: 所有访问都必须在主线程进行，由 @MainActor 保证线程安全
     private var gotoMappings: [ObjectIdentifier: any AnyReducer] = [:]
     
     /// 初始化方法

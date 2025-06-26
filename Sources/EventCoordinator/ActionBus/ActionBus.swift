@@ -104,10 +104,12 @@ private extension ActionBus {
         actionCancellables[hashable] = reducers
         /// AnyCancellable被释放时，移除监听
         return AnyCancellable {[weak self] in
-            guard let self else { return }
-            var reducers = actionCancellables[hashable]
-            reducers?.remove(reducer)
-            actionCancellables[hashable] = reducers
+            Task { @MainActor [weak self] in
+                guard let self else { return }
+                var reducers = self.actionCancellables[hashable]
+                reducers?.remove(reducer)
+                self.actionCancellables[hashable] = reducers
+            }
         }
     }
 }
