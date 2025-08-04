@@ -11,23 +11,17 @@ import Combine
 @MainActor
 public protocol AnyAction {
     /// 发送事件
-    static func send(context: ActionBus, _ action: Self, object: Any?, file: String, function: String, line: Int)
+    static func send(context: ActionBus, _ action: Self, file: String, function: String, line: Int) async
     /// 响应事件
-    static func sink(context: ActionBus, _ receiveValue: @escaping (Self) -> Void) -> AnyCancellable
-    /// 响应事件
-    static func sink(context: ActionBus, _ receiveValue: @escaping (Self, Any?) -> Void) -> AnyCancellable
+    static func sink(context: ActionBus, _ receiveValue: @escaping (Self) -> Void) async -> AnyCancellable
 }
 
 public extension AnyAction {
-    static func send(context: ActionBus, _ action: Self, object: Any? = nil, file: String = #file, function: String = #function, line: Int = #line) where Self: Sendable {
-        context.send(action, object: object, file: file, function: function, line: line)
+    static func send(context: ActionBus, _ action: Self, file: String = #file, function: String = #function, line: Int = #line) async where Self: Sendable {
+        await context.send(action, file: file, function: function, line: line)
     }
     
-    static func sink(context: ActionBus, _ receiveValue: @escaping (Self) -> Void) -> AnyCancellable where Self: Sendable  {
-        context.sink(receiveValue: receiveValue)
-    }
-    
-    static func sink(context: ActionBus, _ receiveValue: @escaping (Self, Any?) -> Void) -> AnyCancellable where Self: Sendable  {
+    static func sink(context: ActionBus, _ receiveValue: @Sendable @escaping (Self) -> Void) async -> AnyCancellable where Self: Sendable  {
         context.sink(receiveValue: receiveValue)
     }
 }

@@ -26,18 +26,18 @@ extension RouterHub {
     /// 注册路由，绑定和重定向
     /// 将路由与对应的目标（页面、控制器、回调等）绑定。
     /// - Parameter gotoHandles: 路由响应
-    func register<R>(_ gotoHandles: @escaping (R) -> Any?) {
+    func register<R: Sendable>(_ gotoHandles: @Sendable @escaping (R) async -> Sendable?) {
         gotoMappings[ObjectIdentifier(R.self)] = Reducer(block: gotoHandles)
     }
     
     /// 获取目标对象
     /// - Parameter rawValue: 类型
     /// - Returns: 指定类型的返回值
-    func resolve<R, T>(_ route: R) throws -> T {
+    func resolve<R: Sendable, T: Sendable>(_ route: R) async throws -> T {
         guard let reducer = gotoMappings[ObjectIdentifier(R.self)] as? RouterHub.Reducer<R> else {
             throw Reason.unRegisterEnumType
         }
-        guard let value = reducer(route) else {
+        guard let value = await reducer(route) else {
             throw Reason.rawMaterialUnqualified
         }
         guard let result = value as? T else {
@@ -71,18 +71,18 @@ extension RouterHub {
 
 // MARK: - RouterHub.DirectReducer
 extension RouterHub {
-    struct Reducer<R>: AnyReducer {
+    struct Reducer<R: Sendable>: AnyReducer, Sendable {
         
-        let block: (R) -> Any?
+        let block: @Sendable (R) async -> Sendable?
         
         @inline(__always)
-        init(block: @escaping (R) -> Any?) {
+        init(block: @Sendable @escaping (R) async -> Sendable?) {
             self.block = block
         }
         
         @inline(__always)
-        func callAsFunction(_ rawValue: R) -> Any? {
-            block(rawValue)
+        func callAsFunction(_ rawValue: R) async -> Sendable? {
+            await block(rawValue)
         }
     }
 }

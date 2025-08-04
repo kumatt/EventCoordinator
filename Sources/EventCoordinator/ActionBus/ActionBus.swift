@@ -21,27 +21,18 @@ public final class ActionBus {
     /// 事件的订阅
     private var actionCancellables: [String: Set<Reducer>] = [:]
     
+    public var cancellables = Set<AnyCancellable>()
+    
     /// 初始化方法
     public init() { }
 }
 
 // MARK: - send action
 public extension ActionBus {
-    /// 发送事件 - 仅在开发环境下生效
-    /// 如果是在调用方法时创建的Action，也仅在开发环境下创建
-    func sendWhenDevelopment<Action>(_ action: @autoclosure () -> Action, object: Any? = nil, file: String = #file, function: String = #function, line: Int = #line) {
-    #if DEBUG
-        send(action(), object: object)
-        
-        /// 记录事件，等级为debug
-//        Log.log(action(), level: .debug, file: file, function: function, line: line)
-    #endif
-    }
-    
     /// 发送事件
     /// 当前事件存在Reducer订阅时，事件才会发送
     @discardableResult
-    func send<Action>(_ action: Action, object: Any? = nil, file: String = #file, function: String = #function, line: Int = #line) -> Bool {
+    func send<Action: Sendable>(_ action: Action, object: Sendable? = nil, file: String = #file, function: String = #function, line: Int = #line) async -> Bool {
         
         /// 记录事件为verbose，debug环境下
 //        Log.log(action, level: .verbose, file: file, function: function, line: line)
@@ -52,7 +43,7 @@ public extension ActionBus {
             return false
         }
         for reducer in reducers {
-            reducer(action, object: object)
+            await reducer(action)
         }
         return true
     }
@@ -60,34 +51,13 @@ public extension ActionBus {
 
 // MARK: - sink action
 public extension ActionBus {
+
     /// 处理事件
     /// - Parameter receiveValue: 事件的回调
     /// - Returns: 订阅的生命周期
-    func sink<Action: Sendable>(receiveValue:@escaping (Action) -> Void) -> AnyCancellable {
-        sink(with: Action.self, reducer: Reducer({ value, _ in
+    func sink<Action: Sendable>(receiveValue:@Sendable @escaping (Action) -> Void) -> AnyCancellable {
+        sink(with: Action.self, reducer: Reducer({ value in
             guard let action = value as? Action else { return }
-            receiveValue(action)
-        }))
-    }
-    
-    /// 处理事件
-    /// - Parameter receiveValue: 事件的回调
-    /// - Returns: 订阅的生命周期
-    func sink<Action: Sendable>(receiveValue:@escaping (Action, Object?) -> Void) -> AnyCancellable {
-        sink(with: Action.self, reducer: Reducer({ value, object in
-            guard let action = value as? Action else { return }
-            receiveValue(action, object)
-        }))
-    }
-    
-    /// 处理事件
-    /// - Parameters:
-    ///   - receiveValue: 事件的回调
-    ///   - targetObject: 目标对象，当sendAction时没有传递这个置顶对象，不会触发回调监听
-    /// - Returns: 订阅的生命周期
-    func sink<Action: Sendable>(receiveValue:@escaping (Action) -> Void, targetObject: NSObject) -> AnyCancellable {
-        sink(with: Action.self, reducer: Reducer({[weak targetObject] value, object in
-            guard let action = value as? Action, (object as? NSObject) == targetObject else { return }
             receiveValue(action)
         }))
     }
@@ -116,20 +86,20 @@ private extension ActionBus {
 
 // MARK: - 事件监听的封装
 extension ActionBus {
-    struct Reducer {
+    struct Reducer: Sendable {
         /// hash tag
         private let id = UUID()
         /// do anything
-        let block: (Any, Any?) -> Void
+        let block: @Sendable (Sendable) async -> Void
         
         @inline(__always)
-        init(_ block: @escaping (Any, Any?) -> Void) {
+        init(_ block: @Sendable @escaping (Sendable) async -> Void) {
             self.block = block
         }
         
         @inline(__always)
-        func callAsFunction(_ action: Any, object: Any?) {
-            block(action, object)
+        func callAsFunction(_ action: Sendable) async {
+            await block(action)
         }
     }
 }
