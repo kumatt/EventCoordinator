@@ -16,7 +16,7 @@ public final class ActionBus {
     public static let `default` = ActionBus()
     
     /// 事件订阅的信号量集合
-    private var subjects: [String: Any] = [:]
+    private var subjects: [ObjectIdentifier: Any] = [:]
     
     /// 初始化方法
     public init() { }
@@ -29,7 +29,7 @@ public extension ActionBus {
     @discardableResult
     func send<Action: Sendable>(_ action: Action, object: Sendable? = nil, file: String = #file, function: String = #function, line: Int = #line) -> Bool {
         
-        let key = String(reflecting: Action.self)
+        let key = ObjectIdentifier(Action.self)
 
         if let subject = subjects[key] as? PassthroughSubject<Action, Never> {
             subject.send(action)
@@ -42,7 +42,7 @@ public extension ActionBus {
 // MARK: - sink action
 public extension ActionBus {
     func publisher<Action: Sendable>(for actionType: Action.Type) -> AnyPublisher<Action, Never> {
-        let key = String(reflecting: Action.self)
+        let key = ObjectIdentifier(Action.self)
         if let subject = subjects[key] as? PassthroughSubject<Action, Never> {
             return subject.eraseToAnyPublisher()
         } else {
