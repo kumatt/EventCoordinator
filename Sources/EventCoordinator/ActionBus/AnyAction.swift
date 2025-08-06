@@ -17,7 +17,7 @@ public protocol AnyAction: Sendable {
 }
 
 public extension AnyAction {
-    static func send(context: ActionBus, _ action: Self, file: String = #file, function: String = #function, line: Int = #line) where Self: Sendable {
+    static func send(context: ActionBus, _ action: Self, file: String = #file, function: String = #function, line: Int = #line) {
         context.send(action, file: file, function: function, line: line)
     }
     
