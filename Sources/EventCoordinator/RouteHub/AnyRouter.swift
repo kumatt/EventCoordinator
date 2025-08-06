@@ -7,7 +7,7 @@
 
 /// 普通路由，直接获取目标值
 @MainActor
-public protocol AnyRouter {
+public protocol AnyRouter: Sendable {
     /// 注册路由
     static func register(context: RouterHub, _ gotoHandle: @escaping (Self) -> Any?)
     /// 注销路由

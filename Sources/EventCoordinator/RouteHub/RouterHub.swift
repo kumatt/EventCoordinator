@@ -26,14 +26,14 @@ extension RouterHub {
     /// 注册路由，绑定和重定向
     /// 将路由与对应的目标（页面、控制器、回调等）绑定。
     /// - Parameter gotoHandles: 路由响应
-    func register<R>(_ gotoHandles: @escaping (R) -> Any?) {
+    func register<R: Sendable>(_ gotoHandles: @escaping (R) -> Any?) {
         gotoMappings[ObjectIdentifier(R.self)] = Reducer(block: gotoHandles)
     }
     
     /// 获取目标对象
     /// - Parameter rawValue: 类型
     /// - Returns: 指定类型的返回值
-    func resolve<R, T>(_ route: R) throws -> T {
+    func resolve<R: Sendable, T: Any>(_ route: R) throws -> T {
         guard let reducer = gotoMappings[ObjectIdentifier(R.self)] as? RouterHub.Reducer<R> else {
             throw Reason.unRegisterEnumType
         }
@@ -71,7 +71,7 @@ extension RouterHub {
 
 // MARK: - RouterHub.DirectReducer
 extension RouterHub {
-    struct Reducer<R>: AnyReducer {
+    struct Reducer<R: Sendable>: AnyReducer {
         
         let block: (R) -> Any?
         
